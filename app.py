@@ -1,89 +1,88 @@
-from flask import Flask, render_template, request, send_file, jsonify
-import yt_dlp
+from flask import Flask, render_template, request, send_file, jsonify, redirect
+import requests
 import os
+import time
 
 app = Flask(__name__)
 
-# Carpeta donde se guardan las descargas
 DOWNLOAD_FOLDER = "downloads"
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
 
 
-def descargar_audio(url):
+def descargar_con_cobalt(url):
     """
-    Descarga el audio y devuelve el nombre del archivo.
+    Usa la API de Cobalt para descargar de YouTube
     """
-    opciones = {
-    'format': 'bestaudio/best',
-    'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }],
-    'cookiefile': 'cookies.txt',
-    'extractor_args': {
-        'youtube': {
-            'player_client': ['android'],
-            'player_skip': ['webpage', 'configs', 'js'],
-        }
-    },
-    'nocheckcertificate': True,
-    'user_agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
-    'referer': 'https://www.youtube.com/',
-    'headers': {
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept': '*/*',
-    },
-    'verbose': True,
-}
+    # API de Cobalt (gratis, no necesita key)
+    api_url = "https://api.cobalt.tools/api/json"
     
-    with yt_dlp.YoutubeDL(opciones) as ydl:
-        info = ydl.extract_info(url, download=True)
-        titulo = info.get('title', 'cancion')
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
     
-    # Buscar el archivo MP3 generado
-    for archivo in os.listdir(DOWNLOAD_FOLDER):
-        if archivo.endswith('.mp3') and titulo in archivo:
-            return archivo
+    data = {
+        "url": url,
+        "isAudioOnly": True,
+        "aFormat": "mp3",
+    }
     
-    return None
+    # Primera petición: pedir la descarga
+    response = requests.post(api_url, headers=headers, json=data, timeout=30)
+    result = response.json()
+    
+    if result.get("status") == "stream":
+        # Obtener el link directo del audio
+        audio_url = result.get("url")
+        
+        # Descargar el archivo
+        audio_response = requests.get(audio_url, timeout=60)
+        
+        # Guardar con nombre único
+        timestamp = int(time.time())
+        filename = f"cancion_{timestamp}.mp3"
+        filepath = os.path.join(DOWNLOAD_FOLDER, filename)
+        
+        with open(filepath, "wb") as f:
+            f.write(audio_response.content)
+        
+        return filename
+    
+    elif result.get("status") == "error":
+        raise Exception(result.get("text", "Error desconocido"))
+    
+    else:
+        raise Exception("No se pudo obtener el audio")
 
 
 @app.route('/')
 def home():
-    """Muestra la página principal"""
     return render_template('index.html')
 
 
 @app.route('/descargar', methods=['POST'])
 def descargar():
-    """Recibe la URL y descarga la música"""
     url = request.form.get('url')
     
     if not url:
         return jsonify({'error': 'No se proporcionó URL'}), 400
     
     try:
-        nombre_archivo = descargar_audio(url)
+        filename = descargar_con_cobalt(url)
         
-        if nombre_archivo:
-            return jsonify({
-                'success': True,
-                'mensaje': '¡Descarga completada!',
-                'archivo': nombre_archivo
-            })
-        else:
-            return jsonify({'error': 'No se pudo descargar'}), 500
-            
+        return jsonify({
+            'success': True,
+            'mensaje': '¡Descarga completada!',
+            'archivo': filename
+        })
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/descargar_archivo/<nombre>')
 def descargar_archivo(nombre):
-    """Permite descargar el archivo MP3"""
     ruta = os.path.join(DOWNLOAD_FOLDER, nombre)
     return send_file(ruta, as_attachment=True)
 
