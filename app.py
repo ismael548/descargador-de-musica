@@ -9,52 +9,55 @@ DOWNLOAD_FOLDER = "downloads"
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
 
+# Tu API Key de RapidAPI (la pegas aquí)
+RAPIDAPI_KEY = "TU_API_KEY_AQUI"
+RAPIDAPI_HOST = "youtube-mp3-download1.p.rapidapi.com"  # Esto puede variar según la API
 
-def descargar_con_cobalt(url):
+
+def descargar_con_api(url):
     """
-    Usa la API de Cobalt v10 para descargar de YouTube
+    Usa RapidAPI para descargar MP3 de YouTube
     """
-    # API de Cobalt v10
-    api_url = "https://api.cobalt.tools/api/download"
+    
+    # Extraer video ID del URL
+    video_id = None
+    if "youtu.be/" in url:
+        video_id = url.split("youtu.be/")[1].split("?")[0]
+    elif "v=" in url:
+        video_id = url.split("v=")[1].split("&")[0]
+    
+    if not video_id:
+        raise Exception("URL de YouTube no válida")
+    
+    # Llamar a la API
+    api_url = f"https://{RAPIDAPI_HOST}/v1"
     
     headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
+        "X-RapidAPI-Key": RAPIDAPI_KEY,
+        "X-RapidAPI-Host": RAPIDAPI_HOST,
     }
     
-    data = {
-        "url": url,
-        "downloadMode": "audio",
-        "audioFormat": "mp3",
-        "filenameStyle": "basic",
-    }
+    querystring = {"videoId": video_id}
     
-    # Primera petición: pedir la descarga
-    response = requests.post(api_url, headers=headers, json=data, timeout=30)
+    response = requests.get(api_url, headers=headers, params=querystring, timeout=30)
     result = response.json()
     
-    if result.get("status") == "stream" or result.get("status") == "redirect":
-        # Obtener el link directo del audio
-        audio_url = result.get("url")
+    if "link" in result:
+        # Descargar el MP3
+        mp3_url = result["link"]
+        mp3_response = requests.get(mp3_url, timeout=120)
         
-        # Descargar el archivo
-        audio_response = requests.get(audio_url, timeout=120)
-        
-        # Guardar con nombre único
+        # Guardar
         timestamp = int(time.time())
         filename = f"cancion_{timestamp}.mp3"
         filepath = os.path.join(DOWNLOAD_FOLDER, filename)
         
         with open(filepath, "wb") as f:
-            f.write(audio_response.content)
+            f.write(mp3_response.content)
         
         return filename
-    
-    elif result.get("status") == "error" or result.get("status") == "picker":
-        raise Exception(result.get("text", "Error desconocido de Cobalt"))
-    
     else:
-        raise Exception(f"Respuesta inesperada: {result}")
+        raise Exception(f"Error de API: {result.get('msg', 'Desconocido')}")
 
 
 @app.route('/')
@@ -70,7 +73,7 @@ def descargar():
         return jsonify({'error': 'No se proporcionó URL'}), 400
     
     try:
-        filename = descargar_con_cobalt(url)
+        filename = descargar_con_api(url)
         
         return jsonify({
             'success': True,
