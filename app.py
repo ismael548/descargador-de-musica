@@ -15,15 +15,24 @@ def descargar_audio(url):
     Descarga el audio y devuelve el nombre del archivo.
     """
     opciones = {
-        'format': 'bestaudio/best',
-        'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'extractor_args': {'youtube': {'player_client': ['android']}},
-    }
+    'format': 'bestaudio/best',
+    'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '192',
+    }],
+    'cookiefile': 'cookies.txt',
+    'extractor_args': {
+        'youtube': {
+            'player_client': ['android'],
+            'player_skip': ['webpage', 'configs'],
+        }
+    },
+    'nocheckcertificate': True,
+    'user_agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
+    'referer': 'https://www.youtube.com/',
+}
     
     with yt_dlp.YoutubeDL(opciones) as ydl:
         info = ydl.extract_info(url, download=True)
