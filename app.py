@@ -22,7 +22,8 @@ def descargar_audio(url):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
-        'cookiesfrombrowser': ('chrome',),
+        'cookiesfrombrowser': None,
+'extractor_args': {'youtube': {'player_client': ['android']}},
     }
     
     with yt_dlp.YoutubeDL(opciones) as ydl:
