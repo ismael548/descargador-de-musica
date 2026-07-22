@@ -73,4 +73,47 @@ def descargar_con_rapidapi(youtube_url):
         
         print(f"⚠️ Aún no listo (Status: {mp3_response.status_code}, Size: {len(mp3_response.content)})")
     
-    raise Exception("La conversión tardó demasiado. Intenta de nuevo en unos
+    raise Exception("La conversión tardó demasiado. Intenta de nuevo en unos segundos.")
+
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+
+@app.route('/descargar', methods=['POST'])
+def descargar():
+    url = request.form.get('url')
+    
+    if not url:
+        return jsonify({'error': 'No se proporcionó URL'}), 400
+    
+    if 'youtube.com' not in url and 'youtu.be' not in url:
+        return jsonify({'error': 'Solo se soportan URLs de YouTube'}), 400
+    
+    try:
+        filename = descargar_con_rapidapi(url)
+        
+        return jsonify({
+            'success': True,
+            'mensaje': '¡Descarga completada!',
+            'archivo': filename
+        })
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/descargar_archivo/<nombre>')
+def descargar_archivo(nombre):
+    ruta = os.path.join(DOWNLOAD_FOLDER, nombre)
+    if not os.path.exists(ruta):
+        return jsonify({'error': 'Archivo no encontrado'}), 404
+    return send_file(ruta, as_attachment=True)
+
+
+if __name__ == '__main__':
+    import os
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
