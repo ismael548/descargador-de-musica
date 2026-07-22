@@ -26,12 +26,17 @@ def descargar_audio(url):
     'extractor_args': {
         'youtube': {
             'player_client': ['android'],
-            'player_skip': ['webpage', 'configs'],
+            'player_skip': ['webpage', 'configs', 'js'],
         }
     },
     'nocheckcertificate': True,
     'user_agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
     'referer': 'https://www.youtube.com/',
+    'headers': {
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': '*/*',
+    },
+    'verbose': True,
 }
     
     with yt_dlp.YoutubeDL(opciones) as ydl:
