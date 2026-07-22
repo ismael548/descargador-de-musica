@@ -29,38 +29,54 @@ def descargar_con_rapidapi(youtube_url):
         "Content-Type": "application/json"
     }
     
-    # Parámetros (query string)
+    # Parámetros
     params = {
         "url": youtube_url,
         "format": "mp3"
     }
     
-    # Llamar a la API
+    # Paso 1: Llamar a la API para iniciar conversión
     print(f"🔍 Enviando URL a RapidAPI: {youtube_url}")
     response = requests.post(api_url, headers=headers, params=params, timeout=60)
     
     print(f"📡 Status: {response.status_code}")
-    print(f"📄 Respuesta: {response.text[:500]}")
     
-    # La API devuelve el MP3 directamente
-    if response.status_code == 200 and len(response.content) > 1000:
-        # Es un archivo MP3
+    # La API devuelve JSON con el downloadUrl
+    if response.status_code == 200:
+        result = response.json()
+        print(f"📄 Respuesta: {result}")
+        
+        download_url = result.get("downloadUrl")
+        status = result.get("status")
+        
+        if not download_url:
+            raise Exception("La API no devolvió URL de descarga")
+        
+        # Paso 2: Esperar si está CONVERTING y luego descargar
+        if status == "CONVERTING":
+            print("⏳ Esperando conversión...")
+            time.sleep(5)  # Esperar 5 segundos
+        
+        # Paso 3: Descargar el MP3 desde la URL
+        print(f"⬇️ Descargando desde: {download_url}")
+        mp3_response = requests.get(download_url, timeout=120)
+        
+        if mp3_response.status_code != 200:
+            raise Exception(f"No se pudo descargar el MP3: {mp3_response.status_code}")
+        
+        # Guardar archivo
         timestamp = int(time.time())
         filename = f"cancion_{timestamp}.mp3"
         filepath = os.path.join(DOWNLOAD_FOLDER, filename)
         
         with open(filepath, "wb") as f:
-            f.write(response.content)
+            f.write(mp3_response.content)
         
+        print(f"✅ Guardado: {filename} ({len(mp3_response.content)} bytes)")
         return filename
     
     else:
-        # Puede que devuelva JSON con error
-        try:
-            error_data = response.json()
-            raise Exception(f"API Error: {error_data.get('message', 'Desconocido')}")
-        except:
-            raise Exception(f"Error: Status {response.status_code}, Respuesta: {response.text[:200]}")
+        raise Exception(f"Error API: {response.status_code}")
 
 
 @app.route('/')
