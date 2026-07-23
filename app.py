@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect
-import urllib.parse
+from flask import Flask, render_template, request, jsonify
+import requests
 import re
 
 app = Flask(__name__)
@@ -12,29 +12,48 @@ def index():
 def download():
     video_url = request.args.get('url')
     if not video_url:
-        return "Falta la URL de la canción", 400
+        return jsonify({'success': False, 'error': 'Falta la URL de la canción'}), 400
 
     try:
-        # 1. Extracción del ID usando una Expresión Regular profesional (Soporta youtu.be, watch?v= y shorts/)
+        # Extracción del ID limpia usando expresiones regulares universales
         patron = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})'
         resultado = re.search(patron, video_url)
         
         if not resultado:
-            return "Por favor, ingresa un enlace válido de YouTube, Shorts o Youtube Music", 400
+            return jsonify({'success': False, 'error': 'Por favor, ingresa un enlace válido de YouTube o Shorts'}), 400
             
         video_id = resultado.group(1)
+        url_limpia = f"https://www.youtube.com/watch?v={video_id}"
 
-        # 2. Construimos la URL limpia de YouTube
-        url_limpia = f"https://youtube.com{video_id}"
+        # Consumimos la infraestructura global de Cobalt (Inmune a geobloqueos)
+        api_url = "https://cobalt.tools"
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "url": url_limpia,
+            "downloadMode": "audio",
+            "audioFormat": "mp3",
+            "audioBitrate": "192"
+        }
+
+        # Realizamos la petición POST al backend del convertidor
+        respuesta = requests.post(api_url, json=payload, headers=headers, timeout=15).json()
         
-        # 3. Consumimos una API de redirección directa de alta disponibilidad (Inmune a los bloqueos de Render)
-        api_redireccion = f"https://vexdwn.com{urllib.parse.quote(url_limpia)}&format=mp3"
+        # Validamos si Cobalt nos entregó con éxito el archivo de audio procesado
+        if respuesta.get('status') == 'error' or not respuesta.get('url'):
+            return jsonify({'success': False, 'error': respuesta.get('text', 'El motor externo no pudo procesar este video')}), 500
 
-        # 4. Redirigimos al navegador del usuario directamente al enlace final del MP3
-        return redirect(api_redireccion)
+        # Devolvemos los datos limpios en formato JSON al navegador del usuario
+        return jsonify({
+            'success': True,
+            'download_url': respuesta.get('url'),
+            'title': respuesta.get('filename', 'musica_descargada.mp3')
+        })
 
     except Exception as e:
-        return f"Error crítico al procesar la ruta de descargas: {e}", 500
+        return jsonify({'success': False, 'error': f"Error en la pasarela en la nube: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
