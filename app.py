@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect
 import urllib.parse
+import re
 
 app = Flask(__name__)
 
@@ -14,26 +15,22 @@ def download():
         return "Falta la URL de la canción", 400
 
     try:
-        # 1. Extracción del ID del video de YouTube de forma segura usando manipulación de texto limpia
-        video_id = ""
-        if "youtu.be/" in video_url:
-            video_id = video_url.split("youtu.be/")[1].split("?")[0]
-        elif "v=" in video_url:
-            video_id = video_url.split("v=")[1].split("&")[0]
-        elif "shorts/" in video_url:
-            video_id = video_url.split("shorts/")[1].split("?")[0]
-        else:
-            return "Por favor, ingresa un enlace válido de YouTube o Shorts", 400
+        # 1. Extracción del ID usando una Expresión Regular profesional (Soporta youtu.be, watch?v= y shorts/)
+        patron = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})'
+        resultado = re.search(patron, video_url)
+        
+        if not resultado:
+            return "Por favor, ingresa un enlace válido de YouTube, Shorts o Youtube Music", 400
+            
+        video_id = resultado.group(1)
 
-        # 2. EL TRUCO DEFINITIVO: Usamos una API de redirección directa de alta disponibilidad (Inmune a bloqueos de Render)
-        # Reconstruimos el enlace limpio de YouTube para el motor de conversión
+        # 2. Construimos la URL limpia de YouTube
         url_limpia = f"https://youtube.com{video_id}"
         
-        # Consumimos una pasarela de descarga directa que forzará la bajada del MP3 en el navegador del usuario
+        # 3. Consumimos una API de redirección directa de alta disponibilidad (Inmune a los bloqueos de Render)
         api_redireccion = f"https://vexdwn.com{urllib.parse.quote(url_limpia)}&format=mp3"
 
-        # 3. Redirigimos la ventana del usuario al enlace de la API.
-        # De esta forma, el celular del usuario descarga la música directo del convertidor sin pasar por los servidores bloqueados de Render.
+        # 4. Redirigimos al navegador del usuario directamente al enlace final del MP3
         return redirect(api_redireccion)
 
     except Exception as e:
