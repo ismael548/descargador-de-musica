@@ -5,159 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎵 Descargador de Música</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.8rem;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #888;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        input[type="text"]:focus {
-            border-color: #667eea;
-        }
-
-        button {
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .status {
-            text-align: center;
-            padding: 15px;
-            border-radius: 12px;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .status.loading {
-            display: block;
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status.success {
-            display: block;
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status.error {
-            display: block;
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #856404;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .history {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .history h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-        }
-
-        .song-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-
-        .song-name {
-            color: #555;
-            font-size: 0.9rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 250px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: white; border-radius: 20px; padding: 40px; width: 100%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; font-size: 1.8rem; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; font-size: 0.9rem; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="text"] { flex: 1; padding: 15px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; outline: none; transition: border-color 0.3s; }
+        input[type="text"]:focus { border-color: #667eea; }
+        button { padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .status { text-align: center; padding: 15px; border-radius: 12px; margin-top: 20px; display: none; }
+        .status.loading { display: block; background: #fff3cd; color: #856404; }
+        .status.success { display: block; background: #d4edda; color: #155724; }
+        .status.error { display: block; background: #f8d7da; color: #721c24; }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #856404; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .history { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+        .history h3 { color: #333; margin-bottom: 15px; font-size: 1.1rem; }
+        .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 10px; margin-bottom: 10px; }
+        .song-name { color: #555; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px; }
     </style>
 </head>
 <body>
@@ -166,8 +34,7 @@
         <p class="subtitle">Pega un enlace de YouTube y descarga el audio</p>
         
         <div class="input-group">
-            <input type="text" id="urlInput" placeholder="https://youtube.com..." autocomplete="off">
-            <!-- El botón llama estrictamente a la función procesarDescarga -->
+            <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
             <button id="downloadBtn" onclick="procesarDescarga()">⬇️ Descargar</button>
         </div>
         
@@ -182,7 +49,7 @@
     <script>
         let descargas = [];
 
-        function procesarDescarga() {
+        async function procesarDescarga() {
             const url = document.getElementById('urlInput').value.trim();
             const btn = document.getElementById('downloadBtn');
             
@@ -192,18 +59,28 @@
             }
             
             btn.disabled = true;
-            mostrarEstado('<span class="spinner"></span>Enviando enlace al servidor de descargas...', 'loading');
+            mostrarEstado('<span class="spinner"></span>Procesando y extrayendo MP3... por favor espera', 'loading');
             
-            // Usamos una ruta relativa directa para que nunca falle la comunicación local
-            window.location.href = "/descargar?url=" + encodeURIComponent(url);
-            
-            const idSimulado = Math.floor(Math.random() * 1000);
-            agregarAHistorial("Canción_" + idSimulado + ".mp3");
-
-            setTimeout(() => {
+            try {
+                // Hacemos una petición asíncrona a nuestra API de Flask en Render
+                const response = await fetch("/descargar?url=" + encodeURIComponent(url));
+                const data = await response.json();
+                
+                if (data.success) {
+                    mostrarEstado('✅ ¡Conversión exitosa! Tu descarga ha comenzado.', 'success');
+                    
+                    // Detona la ventana de descarga nativa del celular usando la URL de Cobalt
+                    window.location.href = data.download_url;
+                    
+                    agregarAHistorial(data.title);
+                } else {
+                    mostrarEstado('❌ Error: ' + data.error, 'error');
+                }
+            } catch (e) {
+                mostrarEstado('❌ Error de conexión con el servidor', 'error');
+            } finally {
                 btn.disabled = false;
-                mostrarEstado('✅ Archivo procesado. Revisa tu consola de VS Code para el diagnóstico.', 'success');
-            }, 5000);
+            }
         }
 
         function mostrarEstado(mensaje, tipo) {
@@ -215,15 +92,13 @@
         function agregarAHistorial(nombre) {
             const history = document.getElementById('history');
             const list = document.getElementById('songsList');
-            
             descargas.unshift(nombre);
             if (descargas.length > 5) descargas.pop();
-            
             history.style.display = 'block';
             list.innerHTML = descargas.map(song => `
                 <div class="song-item">
                     <span class="song-name">🎵 ${song}</span>
-                    <span style="color: #28a745; font-size: 0.8rem; font-weight: bold;">Enviado</span>
+                    <span style="color: #28a745; font-size: 0.8rem; font-weight: bold;">Listo</span>
                 </div>
             `).join('');
         }
@@ -233,4 +108,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
