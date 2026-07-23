@@ -1,8 +1,5 @@
 from flask import Flask, render_template, request, Response
-import yt_dlp
-import subprocess
-import urllib.parse
-import imageio_ffmpeg as ffmpeg_lib
+import requests
 
 app = Flask(__name__)
 
@@ -16,62 +13,40 @@ def download():
     if not video_url:
         return "Falta la URL de la canción", 400
 
-    # Configuración limpia y libre de cookies para SoundCloud
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'nocheckcertificate': True,
-        'quiet': True,
-        'no_warnings': True,
-        'skip_download': True
-    }
-
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_url, download=False)
-            url_directa = info.get('url')
-            titulo_original = info.get('title', 'musica_descargada')
+        # 1. Llamamos a una API pública avanzada de conversión de YouTube a MP3
+        # Esta API externa se encarga de saltarse captchas, IPs de Render y DRMs.
+        api_url = f"https://vexdwn.com{video_url}&format=mp3"
+        
+        # Realizamos la petición al convertidor externo
+        respuesta_api = requests.get(api_url, timeout=15).json()
+        
+        if not respuesta_api.get('success'):
+            return "El convertidor externo no pudo procesar este enlace. Intenta con otro.", 500
             
-            if not url_directa:
-                return "No se pudo extraer el flujo de audio de esta plataforma", 500
+        url_archivo_mp3 = respuesta_api.get('download_url')
+        titulo_cancion = respuesta_api.get('title', 'musica_descargada')
 
-            nombre_archivo = "".join([c for c in titulo_original if c.isalpha() or c.isdigit() or c in ' ._-']).strip()
-            nombre_archivo = f"{nombre_archivo}.mp3"
-            nombre_codificado = urllib.parse.quote(nombre_archivo)
+        # 2. Descargamos el archivo procesado desde la API y lo transmitimos en vivo al usuario
+        def generar_audio():
+            with requests.get(url_archivo_mp3, stream=True) as r:
+                r.raise_for_status()
+                for chunk in r.iter_content(chunk_size=4096):
+                    if chunk:
+                        yield chunk
 
-            ruta_ffmpeg = ffmpeg_lib.get_ffmpeg_exe()
-
-            def generar_audio():
-                comando_ffmpeg = [
-                    ruta_ffmpeg, '-y', '-i', url_directa,
-                    '-f', 'mp3', '-acodec', 'libmp3lame', '-ab', '192k', '-'
-                ]
-                
-                proceso = subprocess.Popen(
-                    comando_ffmpeg,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                    bufsize=10**6
-                )
-                
-                while True:
-                    chunk = proceso.stdout.read(4096)
-                    if not chunk:
-                        break
-                    yield chunk
-                    
-                proceso.stdout.close()
-                proceso.wait()
-
-            headers = {
-                'Content-Disposition': f"attachment; filename*=UTF-8''{nombre_codificado}",
-                'Content-Type': 'audio/mpeg'
-            }
-            
-            return Response(generar_audio(), headers=headers)
+        # 3. Formateamos el nombre del archivo para el celular del usuario
+        nombre_archivo = "".join([c for c in titulo_cancion if c.isalpha() or c.isdigit() or c in ' ._-']).strip()
+        headers = {
+            'Content-Disposition': f"attachment; filename*=UTF-8''{nombre_archivo}.mp3",
+            'Content-Type': 'audio/mpeg'
+        }
+        
+        return Response(generar_audio(), headers=headers)
 
     except Exception as e:
-        print(f"Error general: {e}")
-        return f"Error al procesar el enlace. Asegúrate de ingresar un enlace válido: {e}", 500
+        return f"Error al conectar con el motor de descargas en la nube: {e}", 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
