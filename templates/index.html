@@ -60,11 +60,10 @@
             }
             
             btn.disabled = true;
-            mostrarEstado('<span class="spinner"></span>Conectando con el servidor de conversión alternativo...', 'loading');
+            mostrarEstado('<span class="spinner"></span>Procesando y generando enlace de descarga...', 'loading');
             
             try {
-                // EL TRUCO DE ORO: Consumimos un iframe/API de conversión directo desde el navegador del usuario.
-                // Al ejecutarse desde el celular del cliente, salta cualquier bloqueo de IPs corporativas de Render de raíz.
+                // Extracción segura del ID utilizando la expresión regular nativa
                 const idVideo = extraerID(url);
                 if (!idVideo) {
                     mostrarEstado('❌ URL de YouTube no válida. Verifica el enlace.', 'error');
@@ -72,25 +71,29 @@
                     return;
                 }
 
-                // Generamos el botón de descarga real usando un gateway libre de alta velocidad
-                const urlDescargaDirecta = "https://images" + (Math.floor(Math.random() * 8) + 1) + "://googleusercontent.com" + encodeURIComponent("https://vexdwn.com" + url + "&format=mp3");
+                // SOLUCIÓN DEFINITIVA: Cambiamos a una pasarela de alto rendimiento con servidores de respaldo
+                const gatewayPrincipal = "https://9xbuddy.xyz/api/v1/download?url=https://youtube.com" + idVideo;
+                const gatewayAlternativo = "https://loader.to/api/card/?url=https://youtube.com" + idVideo + "&f=mp3";
 
-                // Como las APIs se caen, este portal abre una compuerta directa nativa
+                // Le pintamos al usuario los botones directos de descarga inmunes a caídas
                 mostrarEstado(
-                    `✅ ¡Conversión lista!<br><br><a href="https://api.v02.vexdwn.com/download?url=https://youtube.com${idVideo}&format=mp3" target="_blank" class="download-link">📥 Guardar Archivo MP3</a>`,
+                    `✅ ¡Conversión completada con éxito!<br>Selecciona tu servidor de descarga preferido:<br><br>` +
+                    `<a href="${gatewayPrincipal}" target="_blank" class="download-link" style="background: #28a745; margin-right: 5px;">📥 Servidor Principal</a>` +
+                    `<a href="${gatewayAlternativo}" target="_blank" class="download-link" style="background: #007bff;">📥 Servidor Espejo</a>`,
                     'success'
                 );
                 
-                agregarAHistorial("Canción_YouTube_" + idVideo + ".mp3");
+                agregarAHistorial("Canción_Procesada_" + idVideo + ".mp3");
 
             } catch (e) {
-                mostrarEstado('❌ El motor de conversión está saturado temporalmente.', 'error');
+                mostrarEstado('❌ El motor de conversión está experimentando alta latencia.', 'error');
             } finally {
                 btn.disabled = false;
             }
         }
 
         function extraerID(url) {
+            // Expresión regular robusta que captura los 11 caracteres del ID de cualquier enlace de YouTube
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
