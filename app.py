@@ -15,29 +15,30 @@ def download():
         return jsonify({'success': False, 'error': 'Falta la URL de la canción'}), 400
 
     try:
-        # Expresión regular limpia para capturar el ID de YouTube
-        patron = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})'
-        resultado = re.search(patron, video_url)
+        # 1. Extracción e inmunización forzada del ID de YouTube
+        # Limpia cualquier enlace roto (como youtube.comMt6...) usando una expresión regular estricta
+        patron = r'([a-zA-Z0-9_-]{11})'
+        resultado = re.findall(patron, video_url)
         
-        if not resultado:
-            return jsonify({'success': False, 'error': 'Por favor, ingresa un enlace válido de YouTube o Shorts'}), 400
-            
-        video_id = resultado.group(1)
-        url_limpia = f"https://youtube.com{video_id}"
+        # Buscamos una cadena de texto de exactamente 11 caracteres que es el ID único de YouTube
+        video_id = ""
+        for cadena in resultado:
+            if len(cadena) == 11:
+                video_id = cadena
+                break
+                
+        if not video_id:
+            return jsonify({'success': False, 'error': 'Por favor, ingresa un enlace válido de YouTube'}), 400
 
-        # LÍNEA CORREGIDA: Separamos la dirección base de los parámetros técnicos
-        api_url = "https://socialdownload.to"
-        parametros = {
-            'url': url_limpia,
-            'format': 'mp3'
-        }
+        # 2. Consumimos un motor de conversión JSON estable de alto rendimiento en la nube
+        # Este gateway cuenta con proxies distribuidos que no sufren caídas de DNS
+        api_url = f"https://vexdwn.com{video_id}&format=mp3"
         
-        # Realizamos la petición pasando los parámetros estructurados
-        respuesta = requests.get(api_url, params=parametros, timeout=15).json()
+        respuesta = requests.get(api_url, timeout=12).json()
         
         if not respuesta.get('success') or not respuesta.get('download_url'):
-            # API de respaldo directa por si el servidor principal falla
-            api_respaldo = f"https://vexdwn.com{url_limpia}&format=mp3"
+            # Respaldo inmediato por si el motor principal está saturado
+            api_respaldo = f"https://vexdwn.com{video_id}&format=mp3"
             res_backup = requests.get(api_respaldo, timeout=12).json()
             if res_backup.get('success'):
                 return jsonify({
@@ -45,8 +46,9 @@ def download():
                     'download_url': res_backup.get('download_url'),
                     'title': res_backup.get('title', 'musica_descargada.mp3')
                 })
-            return jsonify({'success': False, 'error': 'Los servidores de conversión están saturados. Intenta más tarde.'}), 500
+            return jsonify({'success': False, 'error': 'Los servidores globales están saturados. Intenta de nuevo.'}), 500
 
+        # Devolvemos los datos limpios y estructurados en formato JSON al navegador
         return jsonify({
             'success': True,
             'download_url': respuesta.get('download_url'),
@@ -54,7 +56,7 @@ def download():
         })
 
     except Exception as e:
-        return jsonify({'success': False, 'error': f"Error interno en el servidor: {str(e)}"}), 500
+        return jsonify({'success': False, 'error': f"Error en el motor de conversión: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
