@@ -27,7 +27,7 @@ def limpiar_descargas_antiguas():
 def index():
     return render_template('index.html')
 
-# 🔍 RUTA DE DIAGNÓSTICO PARA VERIFICAR COOKIES
+# RUTA DE DIAGNÓSTICO PARA VERIFICAR COOKIES
 @app.route('/test_cookies')
 def test_cookies():
     cookies_path = os.path.join(app.root_path, 'cookies.txt')
@@ -89,9 +89,15 @@ def download():
             }],
             'quiet': True,
             'no_warnings': True,
+            # 📱 Simular clientes de Android e iOS evita que YouTube arroje captchas de bot en servidores cloud
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'ios']
+                }
+            }
         }
 
-        # Si el archivo cookies.txt existe (como vi que lo tienes en tu captura), lo usamos
+        # Si el archivo cookies.txt existe, lo usamos
         if os.path.exists(cookies_path):
             ydl_opts['cookiefile'] = cookies_path
 
