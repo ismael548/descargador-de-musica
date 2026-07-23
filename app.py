@@ -16,9 +16,8 @@ def download():
     if not video_url:
         return "Falta la URL de la canción", 400
 
-    # SOLUCIÓN AQUÍ: Cambiamos 'bestaudio/best' por una regla flexible que nunca falla
+    # SOLUCIÓN: Eliminamos la clave 'format' de aquí para que NO exija formatos rígidos de entrada
     ydl_opts = {
-        'format': 'bestaudio/bestvideo+bestaudio/best', # Si no encuentra solo audio, extrae video+audio
         'nocheckcertificate': True,
         'quiet': True,
         'no_warnings': True,
@@ -28,22 +27,35 @@ def download():
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Extraemos la información sin restricciones de formato
             info = ydl.extract_info(video_url, download=False)
+            
+            # Buscamos la URL directa del flujo multimedia entregado por YouTube
             url_directa = info.get('url')
+            
+            # Si el video tiene múltiples formatos combinados, buscamos en la lista de formatos disponibles
+            if not url_directa and 'formats' in info:
+                # Filtrar preferiblemente los que tengan solo audio o el primero disponible
+                formatos_audio = [f for f in info['formats'] if f.get('vcodec') == 'none']
+                if formatos_audio:
+                    url_directa = formatos_audio[-1].get('url')  # Toma el de mejor calidad de audio
+                else:
+                    url_directa = info['formats'][0].get('url')   # Toma cualquier formato de respaldo
+
             titulo_original = info.get('title', 'musica_descargada')
             
             if not url_directa:
-                return "No se pudo extraer el flujo de audio", 500
+                return "No se pudo extraer ningún flujo de audio o video válido de este enlace", 500
 
+            # Limpieza del título para la descarga estándar en Windows/Android
             nombre_archivo = "".join([c for c in titulo_original if c.isalpha() or c.isdigit() or c in ' ._-']).strip()
             nombre_archivo = f"{nombre_archivo}.mp3"
             nombre_codificado = urllib.parse.quote(nombre_archivo)
 
             ruta_ffmpeg = ffmpeg_lib.get_ffmpeg_exe()
 
+            # El motor FFmpeg se encarga de transformar cualquier flujo de entrada a un estándar MP3
             def generar_audio():
-                # FFmpeg es inteligente: aunque reciba un video completo, 
-                # con '-f mp3' extraerá únicamente el audio y descartará el video
                 comando_ffmpeg = [
                     ruta_ffmpeg, '-y', '-i', url_directa,
                     '-f', 'mp3', '-acodec', 'libmp3lame', '-ab', '192k', '-'
@@ -78,3 +90,4 @@ def download():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
