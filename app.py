@@ -15,44 +15,37 @@ def download():
         return jsonify({'success': False, 'error': 'Falta la URL de la canción'}), 400
 
     try:
-        # 1. Extracción e inmunización forzada del ID de YouTube
-        # Limpia cualquier enlace roto (como youtube.comMt6...) usando una expresión regular estricta
-        patron = r'([a-zA-Z0-9_-]{11})'
-        resultado = re.findall(patron, video_url)
+        # Extracción limpia del ID del video
+        patron = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})'
+        resultado = re.search(patron, video_url)
         
-        # Buscamos una cadena de texto de exactamente 11 caracteres que es el ID único de YouTube
-        video_id = ""
-        for cadena in resultado:
-            if len(cadena) == 11:
-                video_id = cadena
-                break
-                
-        if not video_id:
+        if not resultado:
             return jsonify({'success': False, 'error': 'Por favor, ingresa un enlace válido de YouTube'}), 400
+            
+        video_id = resultado.group(1)
+        url_limpia = f"https://youtube.com{video_id}"
 
-        # 2. Consumimos un motor de conversión JSON estable de alto rendimiento en la nube
-        # Este gateway cuenta con proxies distribuidos que no sufren caídas de DNS
-        api_url = f"https://vexdwn.com{video_id}&format=mp3"
+        # Pasarela segura con tu clave privada
+        api_url = "https://rapidapi.com"
+        parametros = {'url': url_limpia}
+        headers = {
+            # REEMPLAZA ESTE TEXTO CON TU KEY REAL DE RAPIDAPI
+            "x-rapidapi-key": "TU_CLAVE_DE_RAPIDAPI_AQUÍ",
+            "x-rapidapi-host": "://rapidapi.com"
+        }
         
-        respuesta = requests.get(api_url, timeout=12).json()
+        respuesta = requests.get(api_url, params=parametros, headers=headers, timeout=15).json()
         
-        if not respuesta.get('success') or not respuesta.get('download_url'):
-            # Respaldo inmediato por si el motor principal está saturado
-            api_respaldo = f"https://vexdwn.com{video_id}&format=mp3"
-            res_backup = requests.get(api_respaldo, timeout=12).json()
-            if res_backup.get('success'):
-                return jsonify({
-                    'success': True,
-                    'download_url': res_backup.get('download_url'),
-                    'title': res_backup.get('title', 'musica_descargada.mp3')
-                })
-            return jsonify({'success': False, 'error': 'Los servidores globales están saturados. Intenta de nuevo.'}), 500
+        url_descarga = respuesta.get('downloadUrl')
+        titulo = respuesta.get('title', 'musica_descargada.mp3')
+        
+        if not url_descarga:
+            return jsonify({'success': False, 'error': 'Error al procesar el archivo multimedia.'}), 500
 
-        # Devolvemos los datos limpios y estructurados en formato JSON al navegador
         return jsonify({
             'success': True,
-            'download_url': respuesta.get('download_url'),
-            'title': respuesta.get('title', 'musica_descargada.mp3')
+            'download_url': url_descarga,
+            'title': titulo
         })
 
     except Exception as e:
