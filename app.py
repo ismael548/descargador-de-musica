@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response, jsonify
+from flask import Flask, render_template, request, Response
 import requests
 
 app = Flask(__name__)
@@ -14,23 +14,45 @@ def download():
         return "Falta la URL de la canción", 400
 
     try:
-        # LÍNEA CORREGIDA: La URL de la API ahora está limpia y estructurada de forma correcta
-        api_url = "https://vexdwn.com"
-        parametros = {
-            'url': video_url,
-            'format': 'mp3'
-        }
-        
-        # Realizamos la petición pasando los parámetros de forma limpia
-        respuesta_api = requests.get(api_url, params=parametros, timeout=15).json()
-        
-        if not respuesta_api.get('success'):
-            return "El convertidor externo no pudo procesar este enlace. Intenta con otro.", 500
-            
-        url_archivo_mp3 = respuesta_api.get('download_url')
-        titulo_cancion = respuesta_api.get('title', 'musica_descargada')
+        # Extraemos el ID del video de YouTube desde la URL ingresada
+        video_id = ""
+        if "youtu.be/" in video_url:
+            video_id = video_url.split("youtu.be/")[1].split("?")[0]
+        elif "v=" in video_url:
+            video_id = video_url.split("v=")[1].split("&")[0]
+        else:
+            return "Por favor, ingresa un enlace válido de YouTube", 400
 
-        # Descargamos el archivo procesado desde la API y lo transmitimos en vivo al usuario
+        # Consumimos un motor de descarga con proxies residenciales integrados
+        api_url = f"https://cobalt.tools"
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "url": f"https://www.youtube.com/watch?v={video_id}",
+            "downloadMode": "audio",
+            "audioFormat": "mp3",
+            "audioBitrate": "192"
+        }
+
+        # Realizamos la petición POST al backend del convertidor
+        respuesta = requests.post(api_url, json=payload, headers=headers, timeout=15).json()
+        
+        # Si la API Cobalt no responde, usamos una API de respaldo rápida
+        if respuesta.get('status') == 'error' or not respuesta.get('url'):
+            api_respaldo = f"https://vexdwn.com{video_id}&format=mp3"
+            res_backup = requests.get(api_respaldo, timeout=12).json()
+            url_archivo_mp3 = res_backup.get('download_url')
+            titulo_cancion = res_backup.get('title', 'musica_descargada')
+        else:
+            url_archivo_mp3 = respuesta.get('url')
+            titulo_cancion = respuesta.get('filename', 'musica_descargada')
+
+        if not url_archivo_mp3:
+            return "Ambos motores de descarga están saturados. Intenta de nuevo en unos minutos.", 500
+
+        # Transmitimos el audio binario directamente al dispositivo del usuario
         def generar_audio():
             with requests.get(url_archivo_mp3, stream=True) as r:
                 r.raise_for_status()
@@ -38,19 +60,18 @@ def download():
                     if chunk:
                         yield chunk
 
-        # Formateamos el nombre del archivo para el dispositivo del usuario
+        # Limpiamos el título quitando caracteres extraños para la descarga móvil
         nombre_archivo = "".join([c for c in titulo_cancion if c.isalpha() or c.isdigit() or c in ' ._-']).strip()
-        headers = {
+        
+        headers_http = {
             'Content-Disposition': f"attachment; filename*=UTF-8''{nombre_archivo}.mp3",
             'Content-Type': 'audio/mpeg'
         }
         
-        return Response(generar_audio(), headers=headers)
+        return Response(generar_audio(), headers=headers_http)
 
     except Exception as e:
-        return f"Error al conectar con el motor de descargas en la nube: {e}", 500
+        return f"Error crítico al conectar con el servidor de descargas: {e}", 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
-
