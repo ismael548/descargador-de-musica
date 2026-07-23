@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, Response
 import yt_dlp
 import subprocess
 import urllib.parse
-import imageio_ffmpeg as ffmpeg_lib  # IMPORTANTE: Busca FFmpeg dentro del servidor de Render
+import imageio_ffmpeg as ffmpeg_lib
 
 app = Flask(__name__)
 
@@ -16,8 +16,9 @@ def download():
     if not video_url:
         return "Falta la URL de la canción", 400
 
+    # SOLUCIÓN AQUÍ: Cambiamos 'bestaudio/best' por una regla flexible que nunca falla
     ydl_opts = {
-        'format': 'bestaudio/best',
+        'format': 'bestaudio/bestvideo+bestaudio/best', # Si no encuentra solo audio, extrae video+audio
         'nocheckcertificate': True,
         'quiet': True,
         'no_warnings': True,
@@ -38,10 +39,11 @@ def download():
             nombre_archivo = f"{nombre_archivo}.mp3"
             nombre_codificado = urllib.parse.quote(nombre_archivo)
 
-            # EXTRAE LA RUTA BINARIA REAL DENTRO DE RENDER
             ruta_ffmpeg = ffmpeg_lib.get_ffmpeg_exe()
 
             def generar_audio():
+                # FFmpeg es inteligente: aunque reciba un video completo, 
+                # con '-f mp3' extraerá únicamente el audio y descartará el video
                 comando_ffmpeg = [
                     ruta_ffmpeg, '-y', '-i', url_directa,
                     '-f', 'mp3', '-acodec', 'libmp3lame', '-ab', '192k', '-'
@@ -76,4 +78,3 @@ def download():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
