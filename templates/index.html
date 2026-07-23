@@ -3,40 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎵 Descargador de Música Real</title>
+    <title>🎵 Descargador de Música Premium</title>
+    <!-- Google Fonts for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .container { background: white; border-radius: 20px; padding: 40px; width: 100%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-        h1 { text-align: center; color: #333; margin-bottom: 10px; font-size: 1.8rem; }
-        .subtitle { text-align: center; color: #888; margin-bottom: 30px; font-size: 0.9rem; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input[type="text"] { flex: 1; padding: 15px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; outline: none; transition: border-color 0.3s; }
-        input[type="text"]:focus { border-color: #667eea; }
-        button { padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-        button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .status { text-align: center; padding: 15px; border-radius: 12px; margin-top: 20px; display: none; }
-        .status.loading { display: block; background: #fff3cd; color: #856404; }
-        .status.success { display: block; background: #d4edda; color: #155724; }
-        .status.error { display: block; background: #f8d7da; color: #721c24; }
-        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #856404; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px; vertical-align: middle; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .history { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
-        .history h3 { color: #333; margin-bottom: 15px; font-size: 1.1rem; }
-        .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 10px; margin-bottom: 10px; }
-        .song-name { color: #555; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px; }
-        .download-link { display: inline-block; margin-top: 15px; padding: 12px 25px; background: #28a745; color: white; text-decoration: none; border-radius: 12px; font-weight: bold; }
+        :root {
+            --bg-gradient: radial-gradient(circle at top left, #120e2e, #060411);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-gradient: linear-gradient(135deg, #ff007f 0%, #7a00ff 100%);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+        /* Decorative glowing orbs in the background */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            opacity: 0.3;
+        }
+        body::before {
+            background: #ff007f;
+            top: 15%;
+            left: 15%;
+        }
+        body::after {
+            background: #7a00ff;
+            bottom: 15%;
+            right: 15%;
+        }
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 550px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .container:hover {
+            box-shadow: 0 30px 60px -10px rgba(122, 0, 255, 0.15);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .logo-wrapper {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            display: inline-block;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .input-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 18px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            font-family: inherit;
+            font-size: 1rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        input[type="text"]:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #a855f7;
+            box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15);
+        }
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        button {
+            padding: 18px 30px;
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 20px -5px rgba(255, 0, 127, 0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(255, 0, 127, 0.5);
+            filter: brightness(1.1);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .status {
+            text-align: center;
+            padding: 20px;
+            border-radius: 16px;
+            margin-top: 20px;
+            display: none;
+            font-weight: 500;
+            line-height: 1.5;
+            animation: slideUp 0.4s ease-out;
+            border: 1px solid transparent;
+        }
+        .status.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: rgba(245, 158, 11, 0.1);
+            color: #fbbf24;
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+        .status.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+        .status.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(245, 158, 11, 0.2);
+            border-top-color: #fbbf24;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .download-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding: 12px 24px;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .download-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.5);
+            background: #059669;
+        }
+        .history {
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 1px solid var(--card-border);
+            animation: fadeIn 0.5s ease-in;
+        }
+        .history h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .song-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .song-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+        .song-name {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 320px;
+        }
+        .song-status {
+            color: var(--success-color);
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+            .song-name {
+                max-width: 180px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎵 Descargador de Música</h1>
-        <p class="subtitle">Pega un enlace de YouTube y descarga el audio</p>
+        <div class="header">
+            <span class="logo-wrapper">🎵</span>
+            <h1>Descargador de Música</h1>
+            <p class="subtitle">Pega un enlace de YouTube y descarga el audio al instante</p>
+        </div>
         
         <div class="input-group">
             <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
-            <button id="downloadBtn" onclick="procesarDescarga()">⬇️ Descargar</button>
+            <button id="downloadBtn" onclick="procesarDescarga()">
+                <span>⬇️</span> Descargar MP3
+            </button>
         </div>
         
         <div id="status" class="status"></div>
@@ -46,54 +313,48 @@
             <div id="songsList"></div>
         </div>
     </div>
-
     <script>
         let descargas = [];
-
         async function procesarDescarga() {
             const url = document.getElementById('urlInput').value.trim();
             const btn = document.getElementById('downloadBtn');
             
             if (!url) {
-                mostrarEstado('Por favor ingresa una URL de YouTube', 'error');
+                mostrarEstado('❌ Por favor ingresa una URL de YouTube válida', 'error');
                 return;
             }
             
             btn.disabled = true;
-            mostrarEstado('<span class="spinner"></span>Iniciando conversión a MP3... esto tomará unos segundos', 'loading');
+            mostrarEstado('<span class="spinner"></span> Procesando conversión a MP3... esto puede demorar unos segundos.', 'loading');
             
             try {
-                // Hacemos una petición asíncrona a nuestra API de Flask en Render
+                // Petición al endpoint de Flask
                 const response = await fetch("/descargar?url=" + encodeURIComponent(url));
                 const data = await response.json();
                 
                 if (data.success) {
                     mostrarEstado(
-                        `✅ ¡Conversión completada con éxito!<br>` +
-                        `<a href="${data.download_url}" class="download-link">📥 Guardar Archivo MP3</a>`,
+                        `✨ ¡Conversión completada con éxito!<br>` +
+                        `<a href="${data.download_url}" target="_blank" class="download-link">📥 Guardar Archivo MP3</a>`,
                         'success'
                     );
                     
-                    // Intenta forzar la descarga de forma nativa sin abrir pestañas raras
-                    window.location.href = data.download_url;
-                    
+                    // Agregar a la lista de descargas
                     agregarAHistorial(data.title);
                 } else {
                     mostrarEstado('❌ Error: ' + data.error, 'error');
                 }
             } catch (e) {
-                mostrarEstado('❌ Error de comunicación con el servidor en la nube.', 'error');
+                mostrarEstado('❌ Error de comunicación con el servidor. Verifica tu conexión.', 'error');
             } finally {
                 btn.disabled = false;
             }
         }
-
         function mostrarEstado(mensaje, tipo) {
             const status = document.getElementById('status');
             status.innerHTML = mensaje;
             status.className = 'status ' + tipo;
         }
-
         function agregarAHistorial(nombre) {
             const history = document.getElementById('history');
             const list = document.getElementById('songsList');
@@ -103,15 +364,15 @@
             list.innerHTML = descargas.map(song => `
                 <div class="song-item">
                     <span class="song-name">🎵 ${song}</span>
-                    <span style="color: #28a745; font-size: 0.8rem; font-weight: bold;">Listo</span>
+                    <span class="song-status">Listo</span>
                 </div>
             `).join('');
         }
-
         document.getElementById('urlInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') procesarDescarga();
         });
     </script>
 </body>
 </html>
+
 
