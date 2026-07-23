@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response
+from flask import Flask, render_template, request, Response, jsonify
 import requests
 
 app = Flask(__name__)
@@ -14,8 +14,7 @@ def download():
         return "Falta la URL de la canción", 400
 
     try:
-        # 1. Llamamos a una API pública avanzada de conversión de YouTube a MP3
-        # Esta API externa se encarga de saltarse captchas, IPs de Render y DRMs.
+        # Llamamos a una API pública avanzada de conversión de YouTube a MP3
         api_url = f"https://vexdwn.com{video_url}&format=mp3"
         
         # Realizamos la petición al convertidor externo
@@ -27,7 +26,7 @@ def download():
         url_archivo_mp3 = respuesta_api.get('download_url')
         titulo_cancion = respuesta_api.get('title', 'musica_descargada')
 
-        # 2. Descargamos el archivo procesado desde la API y lo transmitimos en vivo al usuario
+        # Descargamos el archivo procesado desde la API y lo transmitimos en vivo al usuario
         def generar_audio():
             with requests.get(url_archivo_mp3, stream=True) as r:
                 r.raise_for_status()
@@ -35,7 +34,7 @@ def download():
                     if chunk:
                         yield chunk
 
-        # 3. Formateamos el nombre del archivo para el celular del usuario
+        # Formateamos el nombre del archivo para el celular del usuario
         nombre_archivo = "".join([c for c in titulo_cancion if c.isalpha() or c.isdigit() or c in ' ._-']).strip()
         headers = {
             'Content-Disposition': f"attachment; filename*=UTF-8''{nombre_archivo}.mp3",
