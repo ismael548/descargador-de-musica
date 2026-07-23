@@ -15,7 +15,7 @@ def download():
         return jsonify({'success': False, 'error': 'Falta la URL de la canción'}), 400
 
     try:
-        # Expresión regular robusta para capturar los 11 caracteres exactos del ID de YouTube
+        # Expresión regular limpia para capturar el ID de YouTube
         patron = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})'
         resultado = re.search(patron, video_url)
         
@@ -23,16 +23,20 @@ def download():
             return jsonify({'success': False, 'error': 'Por favor, ingresa un enlace válido de YouTube o Shorts'}), 400
             
         video_id = resultado.group(1)
-        url_limpia = f"https://www.youtube.com/watch?v={video_id}"
+        url_limpia = f"https://youtube.com{video_id}"
 
-        # Consumimos una API JSON nativa avanzada para desarrolladores
-        api_url = f"https://socialdownload.to{url_limpia}&format=mp3"
+        # LÍNEA CORREGIDA: Separamos la dirección base de los parámetros técnicos
+        api_url = "https://socialdownload.to"
+        parametros = {
+            'url': url_limpia,
+            'format': 'mp3'
+        }
         
-        # Realizamos la petición en segundo plano desde el backend de Render
-        respuesta = requests.get(api_url, timeout=15).json()
+        # Realizamos la petición pasando los parámetros estructurados
+        respuesta = requests.get(api_url, params=parametros, timeout=15).json()
         
         if not respuesta.get('success') or not respuesta.get('download_url'):
-            # API de respaldo directa por si el servidor principal experimenta alta latencia
+            # API de respaldo directa por si el servidor principal falla
             api_respaldo = f"https://vexdwn.com{url_limpia}&format=mp3"
             res_backup = requests.get(api_respaldo, timeout=12).json()
             if res_backup.get('success'):
@@ -43,7 +47,6 @@ def download():
                 })
             return jsonify({'success': False, 'error': 'Los servidores de conversión están saturados. Intenta más tarde.'}), 500
 
-        # Devolvemos los datos limpios en formato JSON al navegador del usuario
         return jsonify({
             'success': True,
             'download_url': respuesta.get('download_url'),
@@ -55,3 +58,4 @@ def download():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
