@@ -27,6 +27,33 @@ def limpiar_descargas_antiguas():
 def index():
     return render_template('index.html')
 
+# 🔍 RUTA DE DIAGNÓSTICO PARA VERIFICAR COOKIES
+@app.route('/test_cookies')
+def test_cookies():
+    cookies_path = os.path.join(app.root_path, 'cookies.txt')
+    exists = os.path.exists(cookies_path)
+    if not exists:
+        return jsonify({
+            'success': False, 
+            'message': 'cookies.txt no existe en el servidor',
+            'root_path': app.root_path,
+            'files_in_root': os.listdir(app.root_path)
+        }), 404
+    
+    try:
+        size = os.path.getsize(cookies_path)
+        with open(cookies_path, 'r', encoding='utf-8', errors='ignore') as f:
+            head = f.read(200)
+        return jsonify({
+            'success': True,
+            'size_bytes': size,
+            'first_200_chars': head,
+            'root_path': app.root_path,
+            'files_in_root': os.listdir(app.root_path)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/descargar')
 def download():
     # Limpiamos archivos temporales viejos
