@@ -14,11 +14,15 @@ def download():
         return "Falta la URL de la canción", 400
 
     try:
-        # Llamamos a una API pública avanzada de conversión de YouTube a MP3
-        api_url = f"https://vexdwn.com{video_url}&format=mp3"
+        # LÍNEA CORREGIDA: La URL de la API ahora está limpia y estructurada de forma correcta
+        api_url = "https://vexdwn.com"
+        parametros = {
+            'url': video_url,
+            'format': 'mp3'
+        }
         
-        # Realizamos la petición al convertidor externo
-        respuesta_api = requests.get(api_url, timeout=15).json()
+        # Realizamos la petición pasando los parámetros de forma limpia
+        respuesta_api = requests.get(api_url, params=parametros, timeout=15).json()
         
         if not respuesta_api.get('success'):
             return "El convertidor externo no pudo procesar este enlace. Intenta con otro.", 500
@@ -34,7 +38,7 @@ def download():
                     if chunk:
                         yield chunk
 
-        # Formateamos el nombre del archivo para el celular del usuario
+        # Formateamos el nombre del archivo para el dispositivo del usuario
         nombre_archivo = "".join([c for c in titulo_cancion if c.isalpha() or c.isdigit() or c in ' ._-']).strip()
         headers = {
             'Content-Disposition': f"attachment; filename*=UTF-8''{nombre_archivo}.mp3",
@@ -48,4 +52,5 @@ def download():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
 
