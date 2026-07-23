@@ -89,12 +89,6 @@ def download():
             }],
             'quiet': True,
             'no_warnings': True,
-            # 📱 Simular clientes de Android e iOS evita que YouTube arroje captchas de bot en servidores cloud
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['android', 'ios']
-                }
-            }
         }
 
         # Si el archivo cookies.txt existe, lo usamos
