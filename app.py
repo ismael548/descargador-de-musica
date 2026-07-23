@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, Response
 import yt_dlp
 import subprocess
 import urllib.parse
+import imageio_ffmpeg as ffmpeg_lib  # IMPORTANTE: Busca FFmpeg dentro del servidor de Render
 
 app = Flask(__name__)
 
@@ -15,14 +16,13 @@ def download():
     if not video_url:
         return "Falta la URL de la canción", 400
 
-    # Configuración optimizada con el uso de tus cookies subidas a GitHub
     ydl_opts = {
         'format': 'bestaudio/best',
         'nocheckcertificate': True,
         'quiet': True,
         'no_warnings': True,
         'skip_download': True,
-        'cookiefile': 'cookies.txt'  # <-- Usa el archivo cookies.txt de tu repositorio
+        'cookiefile': 'cookies.txt'
     }
 
     try:
@@ -34,14 +34,16 @@ def download():
             if not url_directa:
                 return "No se pudo extraer el flujo de audio", 500
 
-            # Limpieza del título para evitar errores de descarga en sistemas de archivos
             nombre_archivo = "".join([c for c in titulo_original if c.isalpha() or c.isdigit() or c in ' ._-']).strip()
             nombre_archivo = f"{nombre_archivo}.mp3"
             nombre_codificado = urllib.parse.quote(nombre_archivo)
 
+            # EXTRAE LA RUTA BINARIA REAL DENTRO DE RENDER
+            ruta_ffmpeg = ffmpeg_lib.get_ffmpeg_exe()
+
             def generar_audio():
                 comando_ffmpeg = [
-                    'ffmpeg', '-y', '-i', url_directa,
+                    ruta_ffmpeg, '-y', '-i', url_directa,
                     '-f', 'mp3', '-acodec', 'libmp3lame', '-ab', '192k', '-'
                 ]
                 
@@ -74,5 +76,4 @@ def download():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
 
