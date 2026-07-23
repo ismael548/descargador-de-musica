@@ -51,52 +51,56 @@
         let descargas = [];
 
         async function procesarDescarga() {
-            const url = document.getElementById('urlInput').value.trim();
+            const urlInput = document.getElementById('urlInput').value.trim();
             const btn = document.getElementById('downloadBtn');
             
-            if (!url) {
+            if (!urlInput) {
                 mostrarEstado('Por favor ingresa una URL de YouTube', 'error');
                 return;
             }
             
             btn.disabled = true;
-            mostrarEstado('<span class="spinner"></span>Procesando y generando enlace de descarga...', 'loading');
+            mostrarEstado('<span class="spinner"></span>Procesando y generando enlace válido de descarga...', 'loading');
             
             try {
-                // Extracción segura del ID utilizando la expresión regular nativa
-                const idVideo = extraerID(url);
-                if (!idVideo) {
-                    mostrarEstado('❌ URL de YouTube no válida. Verifica el enlace.', 'error');
+                // CORRECCIÓN CLAVE: Función de extracción nativa simplificada por bloques limpia sin roturas
+                let videoId = "";
+                if (urlInput.includes("youtu.be/")) {
+                    videoId = urlInput.split("youtu.be/")[1].split("?")[0];
+                } else if (urlInput.includes("v=")) {
+                    videoId = urlInput.split("v=")[1].split("&")[0];
+                } else if (urlInput.includes("shorts/")) {
+                    videoId = urlInput.split("shorts/")[1].split("?")[0];
+                }
+
+                // Si la limpieza falló o el ID no tiene la longitud correcta de YouTube (11 letras)
+                if (!videoId || videoId.length !== 11) {
+                    mostrarEstado('❌ URL de YouTube no reconocida. Asegúrate de copiar el enlace completo.', 'error');
                     btn.disabled = false;
                     return;
                 }
 
-                // SOLUCIÓN DEFINITIVA: Cambiamos a una pasarela de alto rendimiento con servidores de respaldo
-                const gatewayPrincipal = "https://9xbuddy.xyz/api/v1/download?url=https://youtube.com" + idVideo;
-                const gatewayAlternativo = "https://loader.to/api/card/?url=https://youtube.com" + idVideo + "&f=mp3";
+                // Creamos los enlaces enviando la URL perfectamente estructurada al 100%
+                const urlLimpiaParaConvertir = "https://youtube.com" + videoId;
+                
+                // Servidores estables configurados para procesar la descarga directa
+                const servidorPrincipal = "https://loader.to" + encodeURIComponent(urlLimpiaParaConvertir) + "&f=mp3";
+                const servidorEspejo = "https://9xbuddy.xyz" + encodeURIComponent(urlLimpiaParaConvertir);
 
-                // Le pintamos al usuario los botones directos de descarga inmunes a caídas
                 mostrarEstado(
-                    `✅ ¡Conversión completada con éxito!<br>Selecciona tu servidor de descarga preferido:<br><br>` +
-                    `<a href="${gatewayPrincipal}" target="_blank" class="download-link" style="background: #28a745; margin-right: 5px;">📥 Servidor Principal</a>` +
-                    `<a href="${gatewayAlternativo}" target="_blank" class="download-link" style="background: #007bff;">📥 Servidor Espejo</a>`,
+                    `✅ ¡Enlace procesado con éxito!<br>Selecciona tu servidor para bajar el MP3:<br><br>` +
+                    `<a href="${servidorPrincipal}" target="_blank" class="download-link" style="background: #28a745; margin-right: 5px;">📥 Servidor MP3</a>` +
+                    `<a href="${servidorEspejo}" target="_blank" class="download-link" style="background: #007bff;">📥 Servidor Alternativo</a>`,
                     'success'
                 );
                 
-                agregarAHistorial("Canción_Procesada_" + idVideo + ".mp3");
+                agregarAHistorial("Canción_ID_" + videoId + ".mp3");
 
             } catch (e) {
-                mostrarEstado('❌ El motor de conversión está experimentando alta latencia.', 'error');
+                mostrarEstado('❌ Error al procesar las variables de conversión.', 'error');
             } finally {
                 btn.disabled = false;
             }
-        }
-
-        function extraerID(url) {
-            // Expresión regular robusta que captura los 11 caracteres del ID de cualquier enlace de YouTube
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
         }
 
         function mostrarEstado(mensaje, tipo) {
