@@ -15,17 +15,18 @@ def download():
     if not video_url:
         return "Falta la URL de la canción", 400
 
+    # Configuración optimizada con el uso de tus cookies subidas a GitHub
     ydl_opts = {
         'format': 'bestaudio/best',
         'nocheckcertificate': True,
         'quiet': True,
         'no_warnings': True,
-        'skip_download': True
+        'skip_download': True,
+        'cookiefile': 'cookies.txt'  # <-- Usa el archivo cookies.txt de tu repositorio
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # 1. Extraemos los metadatos primero para obtener el título real de la canción
             info = ydl.extract_info(video_url, download=False)
             url_directa = info.get('url')
             titulo_original = info.get('title', 'musica_descargada')
@@ -33,14 +34,11 @@ def download():
             if not url_directa:
                 return "No se pudo extraer el flujo de audio", 500
 
-            # Limpiamos el título quitando caracteres extraños para evitar fallos en la descarga
+            # Limpieza del título para evitar errores de descarga en sistemas de archivos
             nombre_archivo = "".join([c for c in titulo_original if c.isalpha() or c.isdigit() or c in ' ._-']).strip()
             nombre_archivo = f"{nombre_archivo}.mp3"
-
-            # Formateamos el nombre de forma segura para las cabeceras HTTP (evita problemas con acentos o eñes)
             nombre_codificado = urllib.parse.quote(nombre_archivo)
 
-            # 2. Función generadora de transmisión binaria en vivo
             def generar_audio():
                 comando_ffmpeg = [
                     'ffmpeg', '-y', '-i', url_directa,
@@ -63,7 +61,6 @@ def download():
                 proceso.stdout.close()
                 proceso.wait()
 
-            # 3. Cabeceras HTTP dinámicas con el nombre real de la canción
             headers = {
                 'Content-Disposition': f"attachment; filename*=UTF-8''{nombre_codificado}",
                 'Content-Type': 'audio/mpeg'
@@ -77,4 +74,5 @@ def download():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
 
